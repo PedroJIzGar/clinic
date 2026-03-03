@@ -1,0 +1,5 @@
+{"properties": [{
+  "name": "app.firebase.service-account-path",
+  "type": "java.lang.String",
+  "description": "A description for 'app.firebase.service-account-path'"
+}]}
