@@ -12,9 +12,13 @@ import com.clinic.app.users.domain.Role;
 
 public interface AppUserRepository extends JpaRepository<AppUser, Long>, JpaSpecificationExecutor<AppUser> {
 
-	Optional<AppUser> findByFirebaseUid(String firebaseUid);
-	Optional<AppUser> findByEmailIgnoreCase(String email);
-	Page<AppUser> findAllByOrderByCreatedAtDesc(Pageable pageable);
-	long countByRoleAndEnabledTrue(Role role);
-	Optional<AppUser> findById(Long id);
+  Optional<AppUser> findByFirebaseUid(String firebaseUid);
+
+  Optional<AppUser> findByEmailIgnoreCase(String email);
+
+  boolean existsByEmailIgnoreCase(String email);
+
+  Page<AppUser> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+  long countByRoleAndEnabledTrue(Role role);
 }
