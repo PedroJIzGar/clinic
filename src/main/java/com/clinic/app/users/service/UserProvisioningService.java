@@ -13,7 +13,7 @@ import com.clinic.app.users.repo.AppUserRepository;
 
 /**
  * Single entry-point for creating/updating local users based on Firebase authentication.
- * Keeps user creation logic out of security filters and out of invitations.
+ * Keeps provisioning logic out of security filters and out of invitations.
  */
 @Service
 public class UserProvisioningService {
@@ -27,19 +27,23 @@ public class UserProvisioningService {
   }
 
   /**
-   * Called when a Firebase-authenticated user hits the API.
-   * Policy (recommended):
-   * - If user exists by firebaseUid: ensure email is up to date (if changed) and return.
-   * - If not exists by firebaseUid:
-   *    - If email already belongs to another user: conflict (protects against account mismatch)
-   *    - Else create new user as PATIENT enabled=true
+   * Policy:
+   * - If user exists by firebaseUid: ensure email is up-to-date and enabled=true
+   * - If no user by uid:
+   *    - If email already used by a different user: conflict
+   *    - Else create new PATIENT enabled=true
+   *
+   * NOTE: email must be present (because app_user.email is NOT NULL and UNIQUE).
    */
   @Transactional
   public AppUser provisionOnLogin(String firebaseUid, String emailRaw) {
     Objects.requireNonNull(firebaseUid, "firebaseUid");
-    Objects.requireNonNull(emailRaw, "email");
 
     String email = normalizeEmail(emailRaw);
+    if (email == null || email.isBlank()) {
+      throw new BadRequest("Missing email for provisioning");
+    }
+
     OffsetDateTime now = OffsetDateTime.now(clock);
 
     // 1) Existing by uid
@@ -47,9 +51,8 @@ public class UserProvisioningService {
     if (byUid.isPresent()) {
       AppUser u = byUid.get();
 
-      // Email might change in Firebase providers; update if needed
-      if (u.getEmail() == null || !u.getEmail().equalsIgnoreCase(email)) {
-        // But guard against email collisions
+      // If email differs, update but guard against collision
+      if (!u.getEmail().equalsIgnoreCase(email)) {
         userRepo.findByEmailIgnoreCase(email).ifPresent(other -> {
           if (!other.getId().equals(u.getId())) {
             throw new Conflict("Email already used by another user");
@@ -58,7 +61,6 @@ public class UserProvisioningService {
         u.setEmail(email);
       }
 
-      // If your policy is to always enable on login:
       if (!u.isEnabled()) {
         u.setEnabled(true);
       }
@@ -66,7 +68,7 @@ public class UserProvisioningService {
       return userRepo.save(u);
     }
 
-    // 2) No user by uid: ensure email not already used
+    // 2) No user by uid: ensure email not used
     userRepo.findByEmailIgnoreCase(email).ifPresent(other -> {
       throw new Conflict("Email already registered with a different account");
     });
@@ -90,14 +92,16 @@ public class UserProvisioningService {
   @Transactional
   public AppUser createOrUpdateStaffFromInvitation(String firebaseUid, String emailRaw, Role staffRole) {
     Objects.requireNonNull(firebaseUid, "firebaseUid");
-    Objects.requireNonNull(emailRaw, "email");
+    String email = normalizeEmail(emailRaw);
+    if (email == null || email.isBlank()) {
+      throw new BadRequest("Missing email for staff promotion");
+    }
     Objects.requireNonNull(staffRole, "staffRole");
 
     if (staffRole == Role.PATIENT) {
       throw new BadRequest("Staff invitation cannot assign PATIENT role");
     }
 
-    String email = normalizeEmail(emailRaw);
     OffsetDateTime now = OffsetDateTime.now(clock);
 
     // Prefer lookup by uid first
@@ -105,8 +109,7 @@ public class UserProvisioningService {
     if (byUid.isPresent()) {
       AppUser u = byUid.get();
 
-      // If email differs, update but check collisions
-      if (u.getEmail() == null || !u.getEmail().equalsIgnoreCase(email)) {
+      if (!u.getEmail().equalsIgnoreCase(email)) {
         userRepo.findByEmailIgnoreCase(email).ifPresent(other -> {
           if (!other.getId().equals(u.getId())) {
             throw new Conflict("Email already used by another user");
@@ -137,10 +140,10 @@ public class UserProvisioningService {
   }
 
   private String normalizeEmail(String email) {
-    return email.trim().toLowerCase();
+    return email == null ? null : email.trim().toLowerCase();
   }
 
-  // --- Minimal exceptions (swap with shared ones later) ---
+  // Replace later with your shared exceptions (ConflictException, BadRequestException, etc.)
   public static class BadRequest extends RuntimeException { public BadRequest(String m) { super(m); } }
   public static class Conflict extends RuntimeException { public Conflict(String m) { super(m); } }
 }
