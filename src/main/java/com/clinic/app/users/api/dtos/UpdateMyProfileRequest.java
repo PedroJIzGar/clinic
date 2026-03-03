@@ -1,4 +1,4 @@
-package com.clinic.app.users.dtos;
+package com.clinic.app.users.api.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

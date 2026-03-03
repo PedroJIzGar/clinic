@@ -1,4 +1,4 @@
-package com.clinic.app.users.dtos;
+package com.clinic.app.users.api.dtos;
 
 public record MyProfileResponse(
 		String fullName,

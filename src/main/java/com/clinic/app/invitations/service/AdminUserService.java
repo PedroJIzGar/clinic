@@ -1,11 +1,11 @@
-package com.clinic.app.admin.service;
+package com.clinic.app.invitations.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.clinic.app.admin.dto.AdminUserDto;
-import com.clinic.app.users.repository.AppUserRepository;
+import com.clinic.app.invitations.api.dtos.AdminUserDto;
+import com.clinic.app.users.repo.repository.AppUserRepository;
 
 @Service
 public class AdminUserService {

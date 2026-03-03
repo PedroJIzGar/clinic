@@ -1,10 +1,10 @@
-package com.clinic.app.users.controller;
+package com.clinic.app.users.api.controller;
 
 import com.clinic.app.users.AppUser;
 import com.clinic.app.users.UserProfile;
-import com.clinic.app.users.dtos.MyProfileResponse;
-import com.clinic.app.users.dtos.MyUserResponse;
-import com.clinic.app.users.dtos.UpdateMyProfileRequest;
+import com.clinic.app.users.api.dtos.MyProfileResponse;
+import com.clinic.app.users.api.dtos.MyUserResponse;
+import com.clinic.app.users.api.dtos.UpdateMyProfileRequest;
 import com.clinic.app.users.service.CurrentUserService;
 import com.clinic.app.users.service.UserProfileService;
 

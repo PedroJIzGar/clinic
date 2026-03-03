@@ -1,4 +1,4 @@
-package com.clinic.app.admin;
+package com.clinic.app.invitations.domain;
 
 import java.time.OffsetDateTime;
 

@@ -1,4 +1,4 @@
-package com.clinic.app.admin.dto;
+package com.clinic.app.invitations.api.dtos;
 
 import java.time.OffsetDateTime;
 

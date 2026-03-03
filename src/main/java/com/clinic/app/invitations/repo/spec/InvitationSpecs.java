@@ -1,7 +1,8 @@
-package com.clinic.app.admin.spec;
+package com.clinic.app.invitations.repo.spec;
 
 import org.springframework.data.jpa.domain.Specification;
-import com.clinic.app.admin.StaffInvitation;
+
+import com.clinic.app.invitations.domain.StaffInvitation;
 import com.clinic.app.users.InvitationStatus;
 import com.clinic.app.users.Role;
 

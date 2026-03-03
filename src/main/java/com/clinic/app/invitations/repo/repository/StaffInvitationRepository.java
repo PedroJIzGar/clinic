@@ -1,12 +1,12 @@
-package com.clinic.app.admin.repository;
+package com.clinic.app.invitations.repo.repository;
 
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import com.clinic.app.invitations.domain.StaffInvitation;
 import com.clinic.app.users.InvitationStatus;
-import com.clinic.app.admin.StaffInvitation;
 
 public interface StaffInvitationRepository extends JpaRepository<StaffInvitation, Long>, JpaSpecificationExecutor<StaffInvitation> {
 	 

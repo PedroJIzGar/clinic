@@ -1,4 +1,4 @@
-package com.clinic.app.users.repository;
+package com.clinic.app.users.repo.repository;
 
 import java.util.Optional;
 

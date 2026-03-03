@@ -1,4 +1,4 @@
-package com.clinic.app.admin.controller;
+package com.clinic.app.invitations.api.controller;
 
 import java.time.OffsetDateTime;
 import java.util.Set;
@@ -11,16 +11,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import com.clinic.app.admin.StaffInvitation;
-import com.clinic.app.admin.dto.CreateInvitationRequest;
-import com.clinic.app.admin.dto.InvitationResponse;
-import com.clinic.app.admin.repository.StaffInvitationRepository;
-import com.clinic.app.admin.spec.InvitationSpecs;
 import com.clinic.app.common.exception.ConflictException;
+import com.clinic.app.invitations.api.dtos.CreateInvitationRequest;
+import com.clinic.app.invitations.api.dtos.InvitationResponse;
+import com.clinic.app.invitations.domain.StaffInvitation;
+import com.clinic.app.invitations.repo.repository.StaffInvitationRepository;
+import com.clinic.app.invitations.repo.spec.InvitationSpecs;
 import com.clinic.app.users.AppUser;
 import com.clinic.app.users.InvitationStatus;
 import com.clinic.app.users.Role;
-import com.clinic.app.users.repository.AppUserRepository;
+import com.clinic.app.users.repo.repository.AppUserRepository;
 
 import jakarta.validation.Valid;
 

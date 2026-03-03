@@ -1,4 +1,4 @@
-package com.clinic.app.users.spec;
+package com.clinic.app.users.repo.spec;
 
 import org.springframework.data.jpa.domain.Specification;
 

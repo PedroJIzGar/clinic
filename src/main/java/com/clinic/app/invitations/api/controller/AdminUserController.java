@@ -1,4 +1,4 @@
-package com.clinic.app.admin.controller;
+package com.clinic.app.invitations.api.controller;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -6,15 +6,15 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.clinic.app.admin.dto.AdminUserResponse;
-import com.clinic.app.admin.dto.EnableUserRequest;
-import com.clinic.app.admin.dto.UpdateRoleRequest;
 import com.clinic.app.common.exception.ConflictException;
 import com.clinic.app.common.exception.NotFoundException;
+import com.clinic.app.invitations.api.dtos.AdminUserResponse;
+import com.clinic.app.invitations.api.dtos.EnableUserRequest;
+import com.clinic.app.invitations.api.dtos.UpdateRoleRequest;
 import com.clinic.app.users.AppUser;
 import com.clinic.app.users.Role;
-import com.clinic.app.users.repository.AppUserRepository;
-import com.clinic.app.users.spec.AppUserSpecs;
+import com.clinic.app.users.repo.repository.AppUserRepository;
+import com.clinic.app.users.repo.spec.AppUserSpecs;
 
 import jakarta.validation.Valid;
 
