@@ -1,4 +1,4 @@
-package com.clinic.app.users.repo.repository;
+package com.clinic.app.users.repo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

@@ -14,7 +14,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.clinic.app.shared.security.FirebaseAuthFilter;
-import com.clinic.app.shared.security.UserRoleResolver;
+import com.clinic.app.users.service.UserRoleResolver;
 
 @Configuration
 @EnableMethodSecurity

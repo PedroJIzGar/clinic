@@ -15,26 +15,26 @@ import com.clinic.app.invitations.api.dto.CreateInvitationRequest;
 import com.clinic.app.invitations.api.dto.InvitationResponse;
 import com.clinic.app.invitations.domain.InvitationStatus;
 import com.clinic.app.invitations.domain.StaffInvitation;
-import com.clinic.app.invitations.repo.repository.StaffInvitationRepository;
+import com.clinic.app.invitations.repo.StaffInvitationRepository;
 import com.clinic.app.invitations.repo.spec.InvitationSpecs;
 import com.clinic.app.shared.exception.ConflictException;
 import com.clinic.app.users.domain.AppUser;
 import com.clinic.app.users.domain.Role;
-import com.clinic.app.users.repo.repository.AppUserRepository;
+import com.clinic.app.users.repo.AppUserRepository;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/invitations")
 @PreAuthorize("hasRole('ADMIN')")
-public class AdminInvitationController {
+public class invitationController {
 
   private static final Set<Role> ALLOWED = Set.of(Role.DENTIST, Role.RECEPTIONIST, Role.ADMIN);
 
   private final StaffInvitationRepository invitationRepo;
   private final AppUserRepository userRepo;
 
-  public AdminInvitationController(StaffInvitationRepository invitationRepo, AppUserRepository userRepo) {
+  public invitationController(StaffInvitationRepository invitationRepo, AppUserRepository userRepo) {
     this.invitationRepo = invitationRepo;
     this.userRepo = userRepo;
   }

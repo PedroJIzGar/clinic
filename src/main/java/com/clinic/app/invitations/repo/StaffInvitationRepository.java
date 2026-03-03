@@ -1,4 +1,4 @@
-package com.clinic.app.invitations.repo.repository;
+package com.clinic.app.invitations.repo;
 
 import java.util.Optional;
 
