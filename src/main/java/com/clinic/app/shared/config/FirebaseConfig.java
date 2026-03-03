@@ -1,4 +1,4 @@
-package com.clinic.app.config;
+package com.clinic.app.shared.config;
 
 import java.io.FileInputStream;
 

@@ -1,4 +1,4 @@
-package com.clinic.app.auth;
+package com.clinic.app.shared.security;
 
 import com.clinic.app.users.domain.Role;
 

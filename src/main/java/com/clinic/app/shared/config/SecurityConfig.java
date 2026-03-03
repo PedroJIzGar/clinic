@@ -1,4 +1,4 @@
-package com.clinic.app.config;
+package com.clinic.app.shared.config;
 
 
 import org.springframework.context.annotation.Bean;
@@ -13,8 +13,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.clinic.app.auth.FirebaseAuthFilter;
-import com.clinic.app.auth.UserRoleResolver;
+import com.clinic.app.shared.security.FirebaseAuthFilter;
+import com.clinic.app.shared.security.UserRoleResolver;
 
 @Configuration
 @EnableMethodSecurity

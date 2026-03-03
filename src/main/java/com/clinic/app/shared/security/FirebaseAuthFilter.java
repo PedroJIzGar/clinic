@@ -1,4 +1,4 @@
-package com.clinic.app.auth;
+package com.clinic.app.shared.security;
 
 import java.io.IOException;
 import java.util.List;

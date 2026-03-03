@@ -1,4 +1,4 @@
-package com.clinic.app.common.exception;
+package com.clinic.app.shared.exception;
 
 import java.net.URI;
 import java.util.ArrayList;

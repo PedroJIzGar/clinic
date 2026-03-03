@@ -1,4 +1,4 @@
-package com.clinic.app.common;
+package com.clinic.app.shared.util;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

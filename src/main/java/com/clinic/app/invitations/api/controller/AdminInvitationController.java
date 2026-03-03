@@ -11,13 +11,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import com.clinic.app.common.exception.ConflictException;
 import com.clinic.app.invitations.api.dto.CreateInvitationRequest;
 import com.clinic.app.invitations.api.dto.InvitationResponse;
 import com.clinic.app.invitations.domain.InvitationStatus;
 import com.clinic.app.invitations.domain.StaffInvitation;
 import com.clinic.app.invitations.repo.repository.StaffInvitationRepository;
 import com.clinic.app.invitations.repo.spec.InvitationSpecs;
+import com.clinic.app.shared.exception.ConflictException;
 import com.clinic.app.users.domain.AppUser;
 import com.clinic.app.users.domain.Role;
 import com.clinic.app.users.repo.repository.AppUserRepository;

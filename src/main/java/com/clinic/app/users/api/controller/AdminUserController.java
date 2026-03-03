@@ -6,8 +6,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.clinic.app.common.exception.ConflictException;
-import com.clinic.app.common.exception.NotFoundException;
+import com.clinic.app.shared.exception.ConflictException;
+import com.clinic.app.shared.exception.NotFoundException;
 import com.clinic.app.users.api.dto.AdminUserResponse;
 import com.clinic.app.users.api.dto.EnableUserRequest;
 import com.clinic.app.users.api.dto.UpdateRoleRequest;
