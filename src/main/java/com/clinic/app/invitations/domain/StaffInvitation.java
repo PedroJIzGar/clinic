@@ -2,8 +2,7 @@ package com.clinic.app.invitations.domain;
 
 import java.time.OffsetDateTime;
 
-import com.clinic.app.users.InvitationStatus;
-import com.clinic.app.users.Role;
+import com.clinic.app.users.domain.Role;
 
 import jakarta.persistence.*;
 import lombok.*;

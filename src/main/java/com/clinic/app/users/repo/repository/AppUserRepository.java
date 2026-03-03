@@ -7,8 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import com.clinic.app.users.AppUser;
-import com.clinic.app.users.Role;
+import com.clinic.app.users.domain.AppUser;
+import com.clinic.app.users.domain.Role;
 
 public interface AppUserRepository extends JpaRepository<AppUser, Long>, JpaSpecificationExecutor<AppUser> {
 

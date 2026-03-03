@@ -14,12 +14,12 @@ import org.springframework.web.bind.annotation.*;
 import com.clinic.app.common.exception.ConflictException;
 import com.clinic.app.invitations.api.dtos.CreateInvitationRequest;
 import com.clinic.app.invitations.api.dtos.InvitationResponse;
+import com.clinic.app.invitations.domain.InvitationStatus;
 import com.clinic.app.invitations.domain.StaffInvitation;
 import com.clinic.app.invitations.repo.repository.StaffInvitationRepository;
 import com.clinic.app.invitations.repo.spec.InvitationSpecs;
-import com.clinic.app.users.AppUser;
-import com.clinic.app.users.InvitationStatus;
-import com.clinic.app.users.Role;
+import com.clinic.app.users.domain.AppUser;
+import com.clinic.app.users.domain.Role;
 import com.clinic.app.users.repo.repository.AppUserRepository;
 
 import jakarta.validation.Valid;

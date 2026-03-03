@@ -2,9 +2,9 @@ package com.clinic.app.invitations.repo.spec;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import com.clinic.app.invitations.domain.InvitationStatus;
 import com.clinic.app.invitations.domain.StaffInvitation;
-import com.clinic.app.users.InvitationStatus;
-import com.clinic.app.users.Role;
+import com.clinic.app.users.domain.Role;
 
 public class InvitationSpecs {
 

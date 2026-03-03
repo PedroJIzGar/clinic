@@ -1,4 +1,4 @@
-package com.clinic.app.invitations.api.dtos;
+package com.clinic.app.users.api.dtos;
 
 public record EnableUserRequest(
 		boolean enabled) {

@@ -5,8 +5,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import com.clinic.app.invitations.domain.InvitationStatus;
 import com.clinic.app.invitations.domain.StaffInvitation;
-import com.clinic.app.users.InvitationStatus;
 
 public interface StaffInvitationRepository extends JpaRepository<StaffInvitation, Long>, JpaSpecificationExecutor<StaffInvitation> {
 	 

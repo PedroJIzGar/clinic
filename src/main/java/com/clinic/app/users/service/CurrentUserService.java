@@ -4,7 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import com.clinic.app.users.AppUser;
+import com.clinic.app.users.domain.AppUser;
 import com.clinic.app.users.repo.repository.AppUserRepository;
 
 @Service

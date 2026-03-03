@@ -1,4 +1,4 @@
-package com.clinic.app.users;
+package com.clinic.app.users.domain;
 
 import java.time.OffsetDateTime;
 

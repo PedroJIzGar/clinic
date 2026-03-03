@@ -1,8 +1,8 @@
-package com.clinic.app.invitations.api.dtos;
+package com.clinic.app.users.api.dtos;
 
 import java.time.OffsetDateTime;
 
-import com.clinic.app.users.Role;
+import com.clinic.app.users.domain.Role;
 
 public record AdminUserDto(    
 		Long id,

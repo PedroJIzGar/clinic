@@ -2,8 +2,8 @@ package com.clinic.app.users.repo.spec;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.clinic.app.users.AppUser;
-import com.clinic.app.users.Role;
+import com.clinic.app.users.domain.AppUser;
+import com.clinic.app.users.domain.Role;
 
 public final class AppUserSpecs {
 

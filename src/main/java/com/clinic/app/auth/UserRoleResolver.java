@@ -1,6 +1,6 @@
 package com.clinic.app.auth;
 
-import com.clinic.app.users.Role;
+import com.clinic.app.users.domain.Role;
 
 public interface UserRoleResolver {
 

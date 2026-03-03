@@ -1,4 +1,4 @@
-package com.clinic.app.invitations.api.controller;
+package com.clinic.app.users.api.controller;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.*;
 
 import com.clinic.app.common.exception.ConflictException;
 import com.clinic.app.common.exception.NotFoundException;
-import com.clinic.app.invitations.api.dtos.AdminUserResponse;
-import com.clinic.app.invitations.api.dtos.EnableUserRequest;
-import com.clinic.app.invitations.api.dtos.UpdateRoleRequest;
-import com.clinic.app.users.AppUser;
-import com.clinic.app.users.Role;
+import com.clinic.app.users.api.dtos.AdminUserResponse;
+import com.clinic.app.users.api.dtos.EnableUserRequest;
+import com.clinic.app.users.api.dtos.UpdateRoleRequest;
+import com.clinic.app.users.domain.AppUser;
+import com.clinic.app.users.domain.Role;
 import com.clinic.app.users.repo.repository.AppUserRepository;
 import com.clinic.app.users.repo.spec.AppUserSpecs;
 

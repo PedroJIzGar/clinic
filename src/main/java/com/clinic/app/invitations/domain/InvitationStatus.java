@@ -1,4 +1,4 @@
-package com.clinic.app.users;
+package com.clinic.app.invitations.domain;
 
 public enum InvitationStatus {
 	  PENDING,
