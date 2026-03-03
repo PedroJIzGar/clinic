@@ -1,8 +1,8 @@
 package com.clinic.app.users.api.controller;
 
-import com.clinic.app.users.api.dtos.MyProfileResponse;
-import com.clinic.app.users.api.dtos.MyUserResponse;
-import com.clinic.app.users.api.dtos.UpdateMyProfileRequest;
+import com.clinic.app.users.api.dto.MyProfileResponse;
+import com.clinic.app.users.api.dto.MyUserResponse;
+import com.clinic.app.users.api.dto.UpdateMyProfileRequest;
 import com.clinic.app.users.domain.AppUser;
 import com.clinic.app.users.domain.UserProfile;
 import com.clinic.app.users.service.CurrentUserService;

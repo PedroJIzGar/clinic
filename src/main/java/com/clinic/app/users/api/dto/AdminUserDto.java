@@ -1,4 +1,4 @@
-package com.clinic.app.users.api.dtos;
+package com.clinic.app.users.api.dto;
 
 import java.time.OffsetDateTime;
 

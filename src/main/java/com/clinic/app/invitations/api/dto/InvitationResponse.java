@@ -1,4 +1,4 @@
-package com.clinic.app.invitations.api.dtos;
+package com.clinic.app.invitations.api.dto;
 
 import java.time.OffsetDateTime;
 

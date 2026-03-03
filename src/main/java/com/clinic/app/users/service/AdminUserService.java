@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.clinic.app.users.api.dtos.AdminUserDto;
+import com.clinic.app.users.api.dto.AdminUserDto;
 import com.clinic.app.users.repo.repository.AppUserRepository;
 
 @Service

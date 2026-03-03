@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.clinic.app.common.exception.ConflictException;
 import com.clinic.app.common.exception.NotFoundException;
-import com.clinic.app.users.api.dtos.AdminUserResponse;
-import com.clinic.app.users.api.dtos.EnableUserRequest;
-import com.clinic.app.users.api.dtos.UpdateRoleRequest;
+import com.clinic.app.users.api.dto.AdminUserResponse;
+import com.clinic.app.users.api.dto.EnableUserRequest;
+import com.clinic.app.users.api.dto.UpdateRoleRequest;
 import com.clinic.app.users.domain.AppUser;
 import com.clinic.app.users.domain.Role;
 import com.clinic.app.users.repo.repository.AppUserRepository;

@@ -1,4 +1,4 @@
-package com.clinic.app.users.api.dtos;
+package com.clinic.app.users.api.dto;
 
 import com.clinic.app.users.domain.Role;
 

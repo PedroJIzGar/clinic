@@ -1,4 +1,4 @@
-package com.clinic.app.invitations.api.dtos;
+package com.clinic.app.invitations.api.dto;
 
 import com.clinic.app.users.domain.Role;
 

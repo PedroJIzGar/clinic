@@ -12,8 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.clinic.app.common.exception.ConflictException;
-import com.clinic.app.invitations.api.dtos.CreateInvitationRequest;
-import com.clinic.app.invitations.api.dtos.InvitationResponse;
+import com.clinic.app.invitations.api.dto.CreateInvitationRequest;
+import com.clinic.app.invitations.api.dto.InvitationResponse;
 import com.clinic.app.invitations.domain.InvitationStatus;
 import com.clinic.app.invitations.domain.StaffInvitation;
 import com.clinic.app.invitations.repo.repository.StaffInvitationRepository;
