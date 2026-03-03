@@ -26,4 +26,5 @@ public class CurrentUserService {
     return appUserRepository.findByFirebaseUid(firebaseUid)
         .orElseThrow(() -> new IllegalStateException("Authenticated user not found in DB"));
   }
+  
 }

@@ -1,5 +1,22 @@
-{"properties": [{
-  "name": "app.firebase.service-account-path",
-  "type": "java.lang.String",
-  "description": "A description for 'app.firebase.service-account-path'"
-}]}
+{"properties": [
+  {
+    "name": "app.firebase.service-account-path",
+    "type": "java.lang.String",
+    "description": "A description for 'app.firebase.service-account-path'"
+  },
+  {
+    "name": "app.invitations.tokenSecret",
+    "type": "java.lang.String",
+    "description": "A description for 'app.invitations.tokenSecret'"
+  },
+  {
+    "name": "app.invitations.ttlHours",
+    "type": "java.lang.String",
+    "description": "A description for 'app.invitations.ttlHours'"
+  },
+  {
+    "name": "app.invitations.resendCooldownSeconds",
+    "type": "java.lang.String",
+    "description": "A description for 'app.invitations.resendCooldownSeconds'"
+  }
+]}

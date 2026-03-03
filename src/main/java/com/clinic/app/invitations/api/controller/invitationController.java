@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import com.clinic.app.invitations.api.dto.CreateInvitationRequest;
 import com.clinic.app.invitations.api.dto.InvitationResponse;
 import com.clinic.app.invitations.domain.InvitationStatus;
-import com.clinic.app.invitations.domain.StaffInvitation;
-import com.clinic.app.invitations.repo.StaffInvitationRepository;
+import com.clinic.app.invitations.domain.Invitation;
+import com.clinic.app.invitations.repo.InvitationRepository;
 import com.clinic.app.invitations.repo.spec.InvitationSpecs;
 import com.clinic.app.shared.exception.ConflictException;
 import com.clinic.app.users.domain.AppUser;
@@ -31,10 +31,10 @@ public class invitationController {
 
   private static final Set<Role> ALLOWED = Set.of(Role.DENTIST, Role.RECEPTIONIST, Role.ADMIN);
 
-  private final StaffInvitationRepository invitationRepo;
+  private final InvitationRepository invitationRepo;
   private final AppUserRepository userRepo;
 
-  public invitationController(StaffInvitationRepository invitationRepo, AppUserRepository userRepo) {
+  public invitationController(InvitationRepository invitationRepo, AppUserRepository userRepo) {
     this.invitationRepo = invitationRepo;
     this.userRepo = userRepo;
   }
@@ -61,7 +61,7 @@ public class invitationController {
 
     Long adminUserId = extractAdminUserId(auth);
 
-    StaffInvitation inv = invitationRepo.save(StaffInvitation.builder()
+    Invitation inv = invitationRepo.save(Invitation.builder()
         .email(req.email().trim().toLowerCase())
         .role(req.role())
         .status(InvitationStatus.PENDING)
@@ -79,7 +79,7 @@ public class invitationController {
       @RequestParam(required = false) String q,
       Pageable pageable
   ) {
-	  Specification<StaffInvitation> spec = (root, query, cb) -> cb.conjunction();
+	  Specification<Invitation> spec = (root, query, cb) -> cb.conjunction();
 
     if (role != null) spec = spec.and(InvitationSpecs.hasRole(role));
     if (status != null) spec = spec.and(InvitationSpecs.hasStatus(status));
