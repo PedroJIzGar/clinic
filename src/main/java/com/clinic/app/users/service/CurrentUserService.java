@@ -5,7 +5,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.clinic.app.users.AppUser;
-import com.clinic.app.users.repository.AppUserRepository;
+import com.clinic.app.users.repo.repository.AppUserRepository;
 
 @Service
 public class CurrentUserService {

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.clinic.app.users.UserProfile;
-import com.clinic.app.users.repository.UserProfileRepository;
+import com.clinic.app.users.repo.repository.UserProfileRepository;
 
 @Service
 public class UserProfileService {

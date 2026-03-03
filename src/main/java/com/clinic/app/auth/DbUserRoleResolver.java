@@ -3,12 +3,12 @@ package com.clinic.app.auth;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.clinic.app.admin.StaffInvitation;
-import com.clinic.app.admin.repository.StaffInvitationRepository;
+import com.clinic.app.invitations.domain.StaffInvitation;
+import com.clinic.app.invitations.repo.repository.StaffInvitationRepository;
 import com.clinic.app.users.AppUser;
 import com.clinic.app.users.InvitationStatus;
 import com.clinic.app.users.Role;
-import com.clinic.app.users.repository.AppUserRepository;
+import com.clinic.app.users.repo.repository.AppUserRepository;
 
 
 @Service
