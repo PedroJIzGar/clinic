@@ -34,20 +34,21 @@ public class AccountController {
         user.getFirebaseUid(),
         user.getEmail(),
         user.getRole().name(),
-        completed);
+        completed
+    );
   }
 
   @GetMapping("/profile")
   public ResponseEntity<MyProfileResponse> myProfile() {
     AppUser user = currentUserService.requireCurrentUser();
     UserProfile profile = profileService.getProfileOrNull(user.getId());
-    if (profile == null)
-      return ResponseEntity.notFound().build();
+    if (profile == null) return ResponseEntity.notFound().build();
 
     return ResponseEntity.ok(new MyProfileResponse(
         profile.getFullName(),
         profile.getPhone(),
-        profile.getUpdatedAt()));
+        profile.getUpdatedAt()
+    ));
   }
 
   @PutMapping("/profile")
@@ -58,6 +59,7 @@ public class AccountController {
     return new MyProfileResponse(
         p.getFullName(),
         p.getPhone(),
-        p.getUpdatedAt());
+        p.getUpdatedAt()
+    );
   }
 }
