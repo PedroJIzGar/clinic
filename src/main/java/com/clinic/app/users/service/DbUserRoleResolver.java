@@ -1,61 +1,38 @@
 package com.clinic.app.users.service;
 
+import java.util.Objects;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.clinic.app.invitations.domain.InvitationStatus;
-import com.clinic.app.invitations.domain.StaffInvitation;
-import com.clinic.app.invitations.repo.StaffInvitationRepository;
-import com.clinic.app.users.domain.AppUser;
 import com.clinic.app.users.domain.Role;
 import com.clinic.app.users.repo.AppUserRepository;
 
-
+/**
+ * Resolves a user's role from the local database.
+ *
+ * IMPORTANT:
+ * - No side effects here (no user creation, no invitation acceptance).
+ * - Provisioning is handled by UserProvisioningService.
+ * - Invitation acceptance is handled by InvitationService.
+ */
 @Service
 public class DbUserRoleResolver implements UserRoleResolver {
 
   private final AppUserRepository userRepo;
-  private final StaffInvitationRepository invitationRepo;
 
-  public DbUserRoleResolver(AppUserRepository userRepo, StaffInvitationRepository invitationRepo) {
+  public DbUserRoleResolver(AppUserRepository userRepo) {
     this.userRepo = userRepo;
-    this.invitationRepo = invitationRepo;
   }
 
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   public Role resolveRole(String firebaseUid, String email) {
-	  
-    AppUser user = userRepo.findByFirebaseUid(firebaseUid).orElse(null);
+    Objects.requireNonNull(firebaseUid, "firebaseUid");
 
-    if (user == null) {
-      // Si no hay user, miramos invitación por email (si viene null, lo tratamos como patient)
-      var invOpt = (email == null || email.isBlank())
-          ? java.util.Optional.<StaffInvitation>empty()
-          : invitationRepo.findPendingByEmail(email);
-
-      Role roleToAssign = invOpt.map(inv -> inv.getRole()).orElse(Role.PATIENT);
-
-      user = userRepo.save(AppUser.builder()
-          .firebaseUid(firebaseUid)
-          .email(email == null ? "unknown" : email.trim().toLowerCase())
-          .role(roleToAssign)
-          .enabled(true)
-          .createdAt(java.time.OffsetDateTime.now())
-          .build());
-
-      // Si había invitación, la marcamos como aceptada
-      invOpt.ifPresent(inv -> {
-        inv.setStatus(InvitationStatus.ACCEPTED);
-        inv.setAcceptedAt(java.time.OffsetDateTime.now());
-        invitationRepo.save(inv);
-      });
-    }
-
-    if (!user.isEnabled()) {
-      throw new IllegalStateException("User disabled");
-    }
-
-    return user.getRole();
+    return userRepo.findByFirebaseUid(firebaseUid)
+        .map(u -> u.getRole())
+        // Fallback: if user is not found, treat as PATIENT (safe default)
+        .orElse(Role.PATIENT);
   }
 }
