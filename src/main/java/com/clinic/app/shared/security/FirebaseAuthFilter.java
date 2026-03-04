@@ -1,13 +1,14 @@
 package com.clinic.app.shared.security;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import org.springframework.http.MediaType;
+import org.slf4j.MDC;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -26,18 +27,22 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
   private final FirebaseAuth firebaseAuth;
   private final UserProvisioningService userProvisioningService;
+  private final AuthenticationEntryPoint authenticationEntryPoint;
 
-  public FirebaseAuthFilter(FirebaseAuth firebaseAuth, UserProvisioningService userProvisioningService) {
+  public FirebaseAuthFilter(
+      FirebaseAuth firebaseAuth,
+      UserProvisioningService userProvisioningService,
+      AuthenticationEntryPoint restAuthenticationEntryPoint) {
     this.firebaseAuth = firebaseAuth;
     this.userProvisioningService = userProvisioningService;
+    this.authenticationEntryPoint = restAuthenticationEntryPoint;
   }
 
   @Override
   protected void doFilterInternal(
       HttpServletRequest request,
       HttpServletResponse response,
-      FilterChain filterChain
-  ) throws ServletException, IOException {
+      FilterChain filterChain) throws ServletException, IOException {
 
     String authHeader = request.getHeader("Authorization");
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -47,9 +52,11 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
     String idToken = authHeader.substring("Bearer ".length()).trim();
     if (idToken.isEmpty()) {
-      unauthorized(response, "Missing bearer token");
+      failAuth(request, response, "Missing bearer token");
       return;
     }
+
+    boolean mdcPopulated = false;
 
     try {
       FirebaseToken decoded = firebaseAuth.verifyIdToken(idToken);
@@ -58,54 +65,59 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
       String email = decoded.getEmail();
 
       if (uid == null || uid.isBlank()) {
-        unauthorized(response, "Invalid token: missing uid");
+        failAuth(request, response, "Invalid token: missing uid");
         return;
       }
       if (email == null || email.isBlank()) {
-        // Your DB requires email NOT NULL + UNIQUE (AppUser.email), so we enforce it.
-        unauthorized(response, "Invalid token: missing email");
+        // AppUser.email is NOT NULL + UNIQUE
+        failAuth(request, response, "Invalid token: missing email");
         return;
       }
 
-      // ✅ Provision/update local user in DB (PATIENT by default if new)
+      // ✅ Provision/update local user
       AppUser user = userProvisioningService.provisionOnLogin(uid, email);
 
-      FirebasePrincipal principal = new FirebasePrincipal(user.getFirebaseUid(), user.getEmail(), user.getRole());
+      // ✅ Add user context to logs (traceId already set by TraceIdFilter)
+      MDC.put("uid", user.getFirebaseUid());
+      MDC.put("email", user.getEmail());
+      MDC.put("role", user.getRole().name());
+      mdcPopulated = true;
 
-      UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(
-              principal,
-              null,
-              List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-          );
+      FirebasePrincipal principal = new FirebasePrincipal(
+          user.getFirebaseUid(),
+          user.getEmail(),
+          user.getRole());
 
-      authentication.setDetails(new RequestDetails(request.getRemoteAddr(), request.getHeader("User-Agent")));
+      UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+          principal,
+          null,
+          List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
 
       SecurityContextHolder.getContext().setAuthentication(authentication);
       filterChain.doFilter(request, response);
 
     } catch (UserProvisioningService.BadRequest e) {
-      SecurityContextHolder.clearContext();
-      unauthorized(response, e.getMessage());
+      failAuth(request, response, e.getMessage());
     } catch (UserProvisioningService.Conflict e) {
-      SecurityContextHolder.clearContext();
-      unauthorized(response, "Account conflict");
+      // Keep it generic to avoid leaking account state
+      failAuth(request, response, "Account conflict");
     } catch (Exception ex) {
-      SecurityContextHolder.clearContext();
-      unauthorized(response, "Invalid or expired token");
+      failAuth(request, response, "Invalid or expired token");
+    } finally {
+      if (mdcPopulated) {
+        MDC.remove("uid");
+        MDC.remove("email");
+        MDC.remove("role");
+      }
     }
   }
 
-  private void unauthorized(HttpServletResponse response, String message) throws IOException {
-    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-    response.getWriter().write("{\"status\":401,\"message\":\"" + escapeJson(message) + "\"}");
+  private void failAuth(HttpServletRequest request, HttpServletResponse response, String message)
+      throws IOException, ServletException {
+    SecurityContextHolder.clearContext();
+    authenticationEntryPoint.commence(
+        request,
+        response,
+        new InsufficientAuthenticationException(message));
   }
-
-  private String escapeJson(String s) {
-    return s == null ? "" : s.replace("\"", "\\\"");
-  }
-
-  public record RequestDetails(String ip, String userAgent) {}
 }

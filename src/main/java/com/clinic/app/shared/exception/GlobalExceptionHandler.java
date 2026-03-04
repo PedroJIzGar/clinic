@@ -9,6 +9,9 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -20,26 +23,31 @@ import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.core.Ordered;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  // ✅ 404 / 400 
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+  // ✅ 404 / 400 (Spring's ErrorResponseException family)
   @ExceptionHandler(ErrorResponseException.class)
   ProblemDetail handleErrorResponseException(ErrorResponseException ex, HttpServletRequest req) {
     ProblemDetail pd = ex.getBody();
     pd.setInstance(URI.create(req.getRequestURI()));
     pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("ErrorResponseException status={} path={} traceId={} detail={}",
+        pd.getStatus(), req.getRequestURI(), getTraceId(req), safe(pd.getDetail()));
+
     return pd;
   }
 
-  // ✅ 422 - Validación @Valid en DTOs (body JSON)
+  // ✅ 400 - Validation @Valid on DTOs
   @ExceptionHandler(MethodArgumentNotValidException.class)
   ProblemDetail handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
 
-    ProblemDetail pd = ProblemDetail.forStatus(422);
+    ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
     pd.setType(URI.create("https://clinic.com/problems/validation"));
     pd.setTitle("Validation failed");
     pd.setDetail("One or more fields are invalid");
@@ -58,22 +66,30 @@ public class GlobalExceptionHandler {
 
     pd.setProperty("errors", errors);
     pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("Validation error path={} traceId={} errors={}",
+        req.getRequestURI(), getTraceId(req), fieldErrors);
+
     return pd;
   }
 
-  // ✅ 422 - Validación por @RequestParam / @PathVariable (ConstraintViolation)
+  // ✅ 400 - Validation for @RequestParam / @PathVariable (ConstraintViolation)
   @ExceptionHandler(ConstraintViolationException.class)
   ProblemDetail handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
-    ProblemDetail pd = ProblemDetail.forStatus(422);
+    ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
     pd.setType(URI.create("https://clinic.com/problems/validation"));
     pd.setTitle("Validation failed");
     pd.setDetail(ex.getMessage());
     pd.setInstance(URI.create(req.getRequestURI()));
     pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("ConstraintViolation path={} traceId={} detail={}",
+        req.getRequestURI(), getTraceId(req), safe(ex.getMessage()));
+
     return pd;
   }
 
-  // ✅ 409 - Conflictos de dominio (invitación duplicada, etc.)
+  // ✅ 409 - Domain conflicts
   @ExceptionHandler(ConflictException.class)
   ProblemDetail handleConflict(ConflictException ex, HttpServletRequest req) {
     ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.CONFLICT);
@@ -82,10 +98,14 @@ public class GlobalExceptionHandler {
     pd.setDetail(ex.getMessage());
     pd.setInstance(URI.create(req.getRequestURI()));
     pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("Conflict path={} traceId={} detail={}",
+        req.getRequestURI(), getTraceId(req), safe(ex.getMessage()));
+
     return pd;
   }
 
-  // ✅ 404 - No existe
+  // ✅ 404 - Not found
   @ExceptionHandler(NotFoundException.class)
   ProblemDetail handleNotFound(NotFoundException ex, HttpServletRequest req) {
     ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
@@ -94,10 +114,14 @@ public class GlobalExceptionHandler {
     pd.setDetail(ex.getMessage());
     pd.setInstance(URI.create(req.getRequestURI()));
     pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("NotFound path={} traceId={} detail={}",
+        req.getRequestURI(), getTraceId(req), safe(ex.getMessage()));
+
     return pd;
   }
 
-  // ✅ 409 - Violación de constraints de BD (unique, fk, etc.)
+  // ✅ 409 - Database constraint violations (unique, fk, etc.)
   @ExceptionHandler(DataIntegrityViolationException.class)
   ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest req) {
     ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.CONFLICT);
@@ -106,6 +130,10 @@ public class GlobalExceptionHandler {
     pd.setDetail("The operation violates a database constraint.");
     pd.setInstance(URI.create(req.getRequestURI()));
     pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("DataIntegrityViolation path={} traceId={} cause={}",
+        req.getRequestURI(), getTraceId(req), safe(rootMessage(ex)));
+
     return pd;
   }
 
@@ -118,10 +146,13 @@ public class GlobalExceptionHandler {
     pd.setDetail("You don't have permission to access this resource.");
     pd.setInstance(URI.create(req.getRequestURI()));
     pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("AccessDenied path={} traceId={}", req.getRequestURI(), getTraceId(req));
+
     return pd;
   }
 
-  // ✅ 401 - Unauthorized
+  // ✅ 401 - Unauthorized (note: filter/entrypoint may handle it before reaching here)
   @ExceptionHandler(AuthenticationException.class)
   ProblemDetail handleAuth(AuthenticationException ex, HttpServletRequest req) {
     ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
@@ -130,10 +161,29 @@ public class GlobalExceptionHandler {
     pd.setDetail("Authentication required.");
     pd.setInstance(URI.create(req.getRequestURI()));
     pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("AuthenticationException path={} traceId={}", req.getRequestURI(), getTraceId(req));
+
     return pd;
   }
 
-  // ✅ 500 - Última red de seguridad
+  // ✅ 400 - IllegalArgumentException (useful safety net)
+  @ExceptionHandler(IllegalArgumentException.class)
+  ProblemDetail handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest req) {
+    ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+    pd.setType(URI.create("https://clinic.com/problems/bad-request"));
+    pd.setTitle("Bad request");
+    pd.setDetail(ex.getMessage());
+    pd.setInstance(URI.create(req.getRequestURI()));
+    pd.setProperty("traceId", getTraceId(req));
+
+    log.warn("IllegalArgument path={} traceId={} detail={}",
+        req.getRequestURI(), getTraceId(req), safe(ex.getMessage()));
+
+    return pd;
+  }
+
+  // ✅ 500 - Last resort
   @ExceptionHandler(Exception.class)
   ProblemDetail handleGeneric(Exception ex, HttpServletRequest req) {
     ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -142,11 +192,26 @@ public class GlobalExceptionHandler {
     pd.setDetail("Unexpected error");
     pd.setInstance(URI.create(req.getRequestURI()));
     pd.setProperty("traceId", getTraceId(req));
+
+    // Here we DO want the stacktrace
+    log.error("Unhandled exception path={} traceId={}",
+        req.getRequestURI(), getTraceId(req), ex);
+
     return pd;
   }
 
   private String getTraceId(HttpServletRequest req) {
     Object trace = req.getAttribute("traceId");
     return trace != null ? trace.toString() : null;
+  }
+
+  private String safe(String s) {
+    return s == null ? "" : s;
+  }
+
+  private String rootMessage(Throwable t) {
+    Throwable cur = t;
+    while (cur.getCause() != null) cur = cur.getCause();
+    return cur.getMessage();
   }
 }

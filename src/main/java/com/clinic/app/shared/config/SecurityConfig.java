@@ -19,9 +19,8 @@ import com.clinic.app.shared.security.FirebaseAuthFilter;
 public class SecurityConfig {
 
   @Bean
-  SecurityFilterChain securityFilterChain(HttpSecurity http, FirebaseAuthFilter firebaseFilter) throws Exception {
-
-    AuthenticationEntryPoint entryPoint = (request, response, authException) -> {
+  public AuthenticationEntryPoint restAuthenticationEntryPoint() {
+    return (request, response, authException) -> {
       response.setStatus(401);
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.getWriter().write("""
@@ -29,8 +28,11 @@ public class SecurityConfig {
          "detail":"Missing or invalid token","instance":"%s"}
         """.formatted(request.getRequestURI()));
     };
+  }
 
-    AccessDeniedHandler deniedHandler = (request, response, accessDeniedException) -> {
+  @Bean
+  public AccessDeniedHandler restAccessDeniedHandler() {
+    return (request, response, accessDeniedException) -> {
       response.setStatus(403);
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.getWriter().write("""
@@ -38,6 +40,15 @@ public class SecurityConfig {
          "detail":"You don't have permission to access this resource","instance":"%s"}
         """.formatted(request.getRequestURI()));
     };
+  }
+
+  @Bean
+  SecurityFilterChain securityFilterChain(
+      HttpSecurity http,
+      FirebaseAuthFilter firebaseFilter,
+      AuthenticationEntryPoint restAuthenticationEntryPoint,
+      AccessDeniedHandler restAccessDeniedHandler
+  ) throws Exception {
 
     return http
         .csrf(AbstractHttpConfigurer::disable)
@@ -45,8 +56,8 @@ public class SecurityConfig {
         .httpBasic(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
         .exceptionHandling(ex -> ex
-            .authenticationEntryPoint(entryPoint)
-            .accessDeniedHandler(deniedHandler)
+            .authenticationEntryPoint(restAuthenticationEntryPoint)
+            .accessDeniedHandler(restAccessDeniedHandler)
         )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/actuator/health").permitAll()
