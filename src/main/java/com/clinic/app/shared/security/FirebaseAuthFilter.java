@@ -96,10 +96,10 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
       SecurityContextHolder.getContext().setAuthentication(authentication);
       filterChain.doFilter(request, response);
 
-    } catch (UserProvisioningService.BadRequest e) {
+    } catch (IllegalArgumentException e) {
       failAuth(request, response, e.getMessage());
-    } catch (UserProvisioningService.Conflict e) {
-      // Keep it generic to avoid leaking account state
+    } catch (com.clinic.app.shared.exception.ConflictException e) {
+      // Keep generic to avoid leaking account state
       failAuth(request, response, "Account conflict");
     } catch (Exception ex) {
       failAuth(request, response, "Invalid or expired token");

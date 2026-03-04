@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.context.TestConfiguration;
 
+import com.clinic.app.shared.exception.ConflictException;
 import com.clinic.app.users.domain.AppUser;
 import com.clinic.app.users.domain.Role;
 import com.clinic.app.users.repo.AppUserRepository;
@@ -77,7 +78,7 @@ class UserProvisioningServiceTest {
     provisioning.provisionOnLogin("uid-1", "same@email.com");
 
     assertThatThrownBy(() -> provisioning.provisionOnLogin("uid-2", "same@email.com"))
-        .isInstanceOf(UserProvisioningService.Conflict.class);
+        .isInstanceOf(ConflictException.class);
   }
 
   @Test
@@ -102,12 +103,12 @@ class UserProvisioningServiceTest {
   @Test
   void createOrUpdateStaffFromInvitation_rejectsPatientRole() {
     assertThatThrownBy(() -> provisioning.createOrUpdateStaffFromInvitation("uid-1", "x@y.com", Role.PATIENT))
-        .isInstanceOf(UserProvisioningService.BadRequest.class);
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   void provisionOnLogin_rejectsMissingEmail() {
     assertThatThrownBy(() -> provisioning.provisionOnLogin("uid-1", "  "))
-        .isInstanceOf(UserProvisioningService.BadRequest.class);
+        .isInstanceOf(IllegalArgumentException.class);
   }
 }
