@@ -13,24 +13,14 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.clinic.app.shared.security.FirebaseAuthFilter;
-import com.clinic.app.users.service.UserRoleResolver;
-import com.google.firebase.auth.FirebaseAuth;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
   @Bean
-  SecurityFilterChain securityFilterChain(
-      HttpSecurity http,
-      FirebaseAuth firebaseAuth,
-      UserRoleResolver roleResolver
-  ) throws Exception {
-
-    // ✅ now injected dependencies (no static getInstance in filter)
-    FirebaseAuthFilter firebaseFilter = new FirebaseAuthFilter(firebaseAuth, roleResolver);
-
-    AuthenticationEntryPoint entryPoint = (request, response, authException) -> {
+  public AuthenticationEntryPoint restAuthenticationEntryPoint() {
+    return (request, response, authException) -> {
       response.setStatus(401);
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.getWriter().write("""
@@ -38,8 +28,11 @@ public class SecurityConfig {
          "detail":"Missing or invalid token","instance":"%s"}
         """.formatted(request.getRequestURI()));
     };
+  }
 
-    AccessDeniedHandler deniedHandler = (request, response, accessDeniedException) -> {
+  @Bean
+  public AccessDeniedHandler restAccessDeniedHandler() {
+    return (request, response, accessDeniedException) -> {
       response.setStatus(403);
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.getWriter().write("""
@@ -47,6 +40,15 @@ public class SecurityConfig {
          "detail":"You don't have permission to access this resource","instance":"%s"}
         """.formatted(request.getRequestURI()));
     };
+  }
+
+  @Bean
+  SecurityFilterChain securityFilterChain(
+      HttpSecurity http,
+      FirebaseAuthFilter firebaseFilter,
+      AuthenticationEntryPoint restAuthenticationEntryPoint,
+      AccessDeniedHandler restAccessDeniedHandler
+  ) throws Exception {
 
     return http
         .csrf(AbstractHttpConfigurer::disable)
@@ -54,13 +56,12 @@ public class SecurityConfig {
         .httpBasic(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
         .exceptionHandling(ex -> ex
-            .authenticationEntryPoint(entryPoint)
-            .accessDeniedHandler(deniedHandler)
+            .authenticationEntryPoint(restAuthenticationEntryPoint)
+            .accessDeniedHandler(restAccessDeniedHandler)
         )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/actuator/health").permitAll()
-            .requestMatchers("/api/public/invitations/verify").permitAll()
-            .requestMatchers("/api/public/invitations/accept").authenticated()
+            .requestMatchers("/api/public/**").permitAll()
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .anyRequest().authenticated()
         )

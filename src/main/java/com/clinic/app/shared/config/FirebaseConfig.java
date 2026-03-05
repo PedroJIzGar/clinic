@@ -14,7 +14,7 @@ import com.google.firebase.auth.FirebaseAuth;
 @Configuration
 public class FirebaseConfig {
 
-  @Value("${app.firebase.service-account-path}")
+  @Value("${app.firebase.service-account-path:}")
   private String serviceAccountPath;
 
   @Bean
@@ -23,7 +23,6 @@ public class FirebaseConfig {
       throw new IllegalStateException("Missing app.firebase.service-account-path");
     }
 
-    // Reuse default app if already initialized (e.g. tests / reload)
     if (!FirebaseApp.getApps().isEmpty()) {
       return FirebaseApp.getInstance();
     }

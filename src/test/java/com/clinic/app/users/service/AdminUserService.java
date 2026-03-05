@@ -1,5 +1,7 @@
 package com.clinic.app.users.service;
 
+import java.util.Objects;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,6 +37,8 @@ public class AdminUserService {
 
   @Transactional
   public AppUser updateRole(Long id, Role newRole) {
+    Objects.requireNonNull(newRole, "newRole");
+
     AppUser user = userRepo.findById(id)
         .orElseThrow(() -> new NotFoundException("User not found: " + id));
 
@@ -44,6 +48,10 @@ public class AdminUserService {
       if (adminsEnabled <= 1) {
         throw new ConflictException("Cannot remove the last enabled ADMIN");
       }
+    }
+
+    if (user.getRole() == newRole) {
+      return user; // no-op
     }
 
     user.setRole(newRole);
@@ -61,6 +69,10 @@ public class AdminUserService {
       if (adminsEnabled <= 1) {
         throw new ConflictException("Cannot disable the last enabled ADMIN");
       }
+    }
+
+    if (user.isEnabled() == enabled) {
+      return user; // no-op
     }
 
     user.setEnabled(enabled);

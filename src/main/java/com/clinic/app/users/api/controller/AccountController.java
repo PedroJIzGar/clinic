@@ -47,7 +47,7 @@ public class AccountController {
     return ResponseEntity.ok(new MyProfileResponse(
         profile.getFullName(),
         profile.getPhone(),
-        profile.getUpdatedAt().toString()
+        profile.getUpdatedAt()
     ));
   }
 
@@ -59,7 +59,7 @@ public class AccountController {
     return new MyProfileResponse(
         p.getFullName(),
         p.getPhone(),
-        p.getUpdatedAt().toString()
+        p.getUpdatedAt()
     );
   }
 }
