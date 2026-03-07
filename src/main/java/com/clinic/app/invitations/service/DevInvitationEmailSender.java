@@ -2,10 +2,15 @@ package com.clinic.app.invitations.service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -13,12 +18,27 @@ import org.springframework.stereotype.Component;
 @Profile("dev")
 public class DevInvitationEmailSender implements InvitationEmailSender {
 
+    private static final Logger log = LoggerFactory.getLogger(DevInvitationEmailSender.class);
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
+
+    private final Path outputDir;
+    private final Clock clock;
+    private final boolean logFullInvitationLink;
+
+    public DevInvitationEmailSender(
+            @Value("${app.invitations.dev-mail.output-dir:dev-mails}") String outputDir,
+            @Value("${app.invitations.dev-mail.log-full-link:false}") boolean logFullInvitationLink,
+            Clock clock) {
+        this.outputDir = Path.of(outputDir);
+        this.logFullInvitationLink = logFullInvitationLink;
+        this.clock = clock;
+    }
 
     @Override
     public void sendStaffInvitationEmail(String toEmail, String invitationLink, OffsetDateTime expiresAt) {
-        String now = TS.format(OffsetDateTime.now());
+        String now = TS.format(OffsetDateTime.now(clock));
         String subject = "[DEV] Clinic Staff Invitation";
+
         String body = """
                 To: %s
                 Subject: %s
@@ -30,27 +50,23 @@ public class DevInvitationEmailSender implements InvitationEmailSender {
 
                 Expires at: %s
 
-                (DEV NOTE) Copy the token from the link query param 'token' for Postman tests.
+                (DEV NOTE) Use the token from the link query parameter 'token' for local/Postman tests only.
                 """.formatted(toEmail, subject, invitationLink, expiresAt);
 
-        // 1) Console/log output (copy friendly)
-        System.out.println("\n================= DEV EMAIL (INVITATION) =================");
-        System.out.println(body);
-        System.out.println("==========================================================\n");
-
-        // 2) Write to file (easier than hunting logs)
         try {
-            Path dir = Paths.get("dev-mails");
-            Files.createDirectories(dir);
+            Files.createDirectories(outputDir);
 
-            // sanitize filename
             String safeEmail = toEmail.replaceAll("[^a-zA-Z0-9._-]", "_");
-            Path file = dir.resolve("invitation_" + safeEmail + "_" + now + ".txt");
+            Path file = outputDir.resolve("invitation_" + safeEmail + "_" + now + ".txt");
 
-            Files.writeString(file, body, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+            Files.writeString(file, body, StandardCharsets.UTF_8);
+            log.info("DEV invitation email generated for {} at {}", toEmail, file.toAbsolutePath());
+
+            if (logFullInvitationLink) {
+                log.info("DEV invitation link for {}: {}", toEmail, invitationLink);
+            }
         } catch (IOException e) {
-            // If file write fails, logs already contain the email.
-            System.err.println("DEV mail write failed: " + e.getMessage());
+            log.warn("Failed to write DEV invitation email for {}", toEmail, e);
         }
     }
 }

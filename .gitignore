@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+## Local generated invitation previews
+dev-mails/
+
+## Local environment files / secrets
+.env
+*.log
+firebase-*.json
