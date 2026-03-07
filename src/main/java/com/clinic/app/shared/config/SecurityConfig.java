@@ -58,7 +58,7 @@ public class SecurityConfig {
             .authenticationEntryPoint(restAuthenticationEntryPoint)
             .accessDeniedHandler(restAccessDeniedHandler))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/actuator/**").permitAll()
+            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
             // Invitations
             .requestMatchers("/api/public/invitations/verify").permitAll()
             .requestMatchers("/api/public/invitations/accept").authenticated()
