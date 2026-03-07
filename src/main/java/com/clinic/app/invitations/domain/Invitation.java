@@ -1,6 +1,7 @@
 package com.clinic.app.invitations.domain;
 
 import java.time.OffsetDateTime;
+
 import com.clinic.app.users.domain.Role;
 
 import jakarta.persistence.*;
@@ -59,17 +60,61 @@ public class Invitation {
   @Column(name = "revoked_at")
   private OffsetDateTime revokedAt;
 
-  // Optimistic locking (pro)
   @Version
   private Long version;
 
-  public void accept() {
-    this.status = InvitationStatus.ACCEPTED;
-    this.acceptedAt = OffsetDateTime.now();
-    this.updatedAt = OffsetDateTime.now();
+  public void markExpired(OffsetDateTime now) {
+    requireNow(now);
+    if (this.status != InvitationStatus.PENDING) {
+      throw new IllegalStateException("Only pending invitations can be marked as expired");
+    }
+    this.status = InvitationStatus.EXPIRED;
+    this.updatedAt = now;
   }
 
-  public void cancel() {
+  public void resend(String newTokenHash, OffsetDateTime now) {
+    requireNow(now);
+
+    if (this.status != InvitationStatus.PENDING) {
+      throw new IllegalStateException("Only pending invitations can be resent");
+    }
+    if (newTokenHash == null || newTokenHash.isBlank()) {
+      throw new IllegalArgumentException("newTokenHash must not be blank");
+    }
+
+    this.tokenHash = newTokenHash;
+    this.lastSentAt = now;
+    this.sendCount = this.sendCount + 1;
+    this.updatedAt = now;
+  }
+
+  public void accept(OffsetDateTime now) {
+    requireNow(now);
+
+    if (this.status != InvitationStatus.PENDING) {
+      throw new IllegalStateException("Only pending invitations can be accepted");
+    }
+
+    this.status = InvitationStatus.ACCEPTED;
+    this.acceptedAt = now;
+    this.updatedAt = now;
+  }
+
+  public void cancel(OffsetDateTime now) {
+    requireNow(now);
+
+    if (this.status != InvitationStatus.PENDING) {
+      throw new IllegalStateException("Only pending invitations can be cancelled");
+    }
+
     this.status = InvitationStatus.CANCELLED;
+    this.revokedAt = now;
+    this.updatedAt = now;
+  }
+
+  private void requireNow(OffsetDateTime now) {
+    if (now == null) {
+      throw new IllegalArgumentException("now must not be null");
+    }
   }
 }

@@ -82,9 +82,12 @@ public class InvitationService {
   public InvitationPageResponse list(Role role, InvitationStatus status, String q, Pageable pageable) {
     Specification<Invitation> spec = (root, query, cb) -> cb.conjunction();
 
-    if (role != null) spec = spec.and(InvitationSpecs.hasRole(role));
-    if (status != null) spec = spec.and(InvitationSpecs.hasStatus(status));
-    if (q != null && !q.isBlank()) spec = spec.and(InvitationSpecs.emailContains(q));
+    if (role != null)
+      spec = spec.and(InvitationSpecs.hasRole(role));
+    if (status != null)
+      spec = spec.and(InvitationSpecs.hasStatus(status));
+    if (q != null && !q.isBlank())
+      spec = spec.and(InvitationSpecs.emailContains(q));
 
     Page<InvitationResponse> page = invitationRepo.findAll(spec, pageable).map(this::toResponse);
 
@@ -95,8 +98,7 @@ public class InvitationService {
         page.getTotalElements(),
         page.getTotalPages(),
         page.isFirst(),
-        page.isLast()
-    );
+        page.isLast());
   }
 
   @Transactional
@@ -123,7 +125,8 @@ public class InvitationService {
 
   /**
    * Creates a new PENDING invitation OR returns existing PENDING if still valid.
-   * - If PENDING exists and not expired -> idempotent return (no new token, no resend)
+   * - If PENDING exists and not expired -> idempotent return (no new token, no
+   * resend)
    * - If PENDING exists but expired -> mark EXPIRED and create new
    *
    * Token is delivered via InvitationEmailSender (DEV: logs + file).
@@ -135,7 +138,8 @@ public class InvitationService {
     Objects.requireNonNull(adminUserId, "adminUserId");
 
     String email = normalizeEmail(emailRaw);
-    if (email.isBlank()) throw new IllegalArgumentException("Email is required");
+    if (email.isBlank())
+      throw new IllegalArgumentException("Email is required");
 
     OffsetDateTime now = OffsetDateTime.now(clock);
 
@@ -144,8 +148,7 @@ public class InvitationService {
       Invitation existing = existingOpt.get();
 
       if (isExpired(existing, now)) {
-        existing.setStatus(InvitationStatus.EXPIRED);
-        existing.setUpdatedAt(now);
+        existing.markExpired(now);
         invitationRepo.save(existing);
       } else {
         return existing;
@@ -195,8 +198,7 @@ public class InvitationService {
     }
 
     if (isExpired(inv, now)) {
-      inv.setStatus(InvitationStatus.EXPIRED);
-      inv.setUpdatedAt(now);
+      inv.markExpired(now);
       invitationRepo.save(inv);
       throw new ConflictException("Invitation expired");
     }
@@ -211,10 +213,7 @@ public class InvitationService {
     String token = tokenService.generateToken();
     String tokenHash = tokenService.hashToken(token);
 
-    inv.setTokenHash(tokenHash);
-    inv.setLastSentAt(now);
-    inv.setSendCount(inv.getSendCount() + 1);
-    inv.setUpdatedAt(now);
+    inv.resend(tokenHash, now);
 
     Invitation saved = invitationRepo.save(inv);
 
@@ -241,9 +240,7 @@ public class InvitationService {
       throw new ConflictException("Only PENDING invitations can be cancelled");
     }
 
-    inv.setStatus(InvitationStatus.CANCELLED);
-    inv.setRevokedAt(now);
-    inv.setUpdatedAt(now);
+    inv.cancel(now);
     return invitationRepo.save(inv);
   }
 
@@ -253,7 +250,8 @@ public class InvitationService {
   @Transactional(readOnly = true)
   public VerificationResult verify(String rawToken) {
     String token = Objects.requireNonNull(rawToken, "token").trim();
-    if (token.isEmpty()) throw new IllegalArgumentException("Missing invitation token");
+    if (token.isEmpty())
+      throw new IllegalArgumentException("Missing invitation token");
 
     OffsetDateTime now = OffsetDateTime.now(clock);
 
@@ -280,7 +278,8 @@ public class InvitationService {
     Objects.requireNonNull(principal, "principal");
 
     String token = Objects.requireNonNull(rawToken, "token").trim();
-    if (token.isEmpty()) throw new IllegalArgumentException("Missing invitation token");
+    if (token.isEmpty())
+      throw new IllegalArgumentException("Missing invitation token");
 
     OffsetDateTime now = OffsetDateTime.now(clock);
 
@@ -293,8 +292,7 @@ public class InvitationService {
     }
 
     if (isExpired(inv, now)) {
-      inv.setStatus(InvitationStatus.EXPIRED);
-      inv.setUpdatedAt(now);
+      inv.markExpired(now);
       invitationRepo.save(inv);
       throw new ConflictException("Invitation expired");
     }
@@ -307,12 +305,9 @@ public class InvitationService {
     userProvisioningService.createOrUpdateStaffFromInvitation(
         principal.uid(),
         principal.email(),
-        inv.getRole()
-    );
+        inv.getRole());
 
-    inv.setStatus(InvitationStatus.ACCEPTED);
-    inv.setAcceptedAt(now);
-    inv.setUpdatedAt(now);
+    inv.accept(now);
     return invitationRepo.save(inv);
   }
 
@@ -336,5 +331,6 @@ public class InvitationService {
     return email == null ? "" : email.trim().toLowerCase();
   }
 
-  public record VerificationResult(boolean valid, InvitationStatus status, OffsetDateTime expiresAt) {}
+  public record VerificationResult(boolean valid, InvitationStatus status, OffsetDateTime expiresAt) {
+  }
 }
