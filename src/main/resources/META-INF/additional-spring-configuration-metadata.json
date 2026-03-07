@@ -1,33 +1,13 @@
 {"properties": [
   {
-    "name": "app.firebase.service-account-path",
+    "name": "firebase.service-account-path",
     "type": "java.lang.String",
-    "description": "A description for 'app.firebase.service-account-path'"
+    "description": "A description for 'firebase.service-account-path'"
   },
   {
-    "name": "app.invitations.tokenSecret",
+    "name": "app.invitations.base-url",
     "type": "java.lang.String",
-    "description": "A description for 'app.invitations.tokenSecret'"
-  },
-  {
-    "name": "app.invitations.ttlHours",
-    "type": "java.lang.String",
-    "description": "A description for 'app.invitations.ttlHours'"
-  },
-  {
-    "name": "app.invitations.resendCooldownSeconds",
-    "type": "java.lang.String",
-    "description": "A description for 'app.invitations.resendCooldownSeconds'"
-  },
-  {
-    "name": "app.invitations.tokenSecret",
-    "type": "java.lang.String",
-    "description": "A description for 'app.invitations.tokenSecret'"
-  },
-  {
-    "name": "app.invitations.tokenSecret",
-    "type": "java.lang.String",
-    "description": "A description for 'app.invitations.tokenSecret'"
+    "description": "A description for 'app.invitations.base-url'"
   },
   {
     "name": "app.invitations.dev-mail.output-dir",
@@ -38,5 +18,10 @@
     "name": "app.invitations.dev-mail.log-full-link",
     "type": "java.lang.String",
     "description": "A description for 'app.invitations.dev-mail.log-full-link'"
+  },
+  {
+    "name": "app.invitations.token-secret",
+    "type": "java.lang.String",
+    "description": "A description for 'app.invitations.token-secret'"
   }
 ]}

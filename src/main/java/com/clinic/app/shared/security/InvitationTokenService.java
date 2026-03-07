@@ -19,7 +19,7 @@ public class InvitationTokenService {
   private final SecureRandom secureRandom = new SecureRandom();
   private final byte[] secretBytes;
 
-  public InvitationTokenService(@Value("${app.invitations.tokenSecret:}") String tokenSecret) {
+  public InvitationTokenService(@Value("${app.invitations.token-secret:}") String tokenSecret) {
     if (tokenSecret == null || tokenSecret.isBlank()) {
       throw new IllegalArgumentException("Missing app.invitations.tokenSecret");
     }
