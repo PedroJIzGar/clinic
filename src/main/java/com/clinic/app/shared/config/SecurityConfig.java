@@ -1,8 +1,18 @@
 package com.clinic.app.shared.config;
 
+import java.io.IOException;
+
+import com.clinic.app.shared.exception.ApiProblemFactory;
+import com.clinic.app.shared.security.FirebaseAuthFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -12,33 +22,37 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.clinic.app.shared.security.FirebaseAuthFilter;
-
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
   @Bean
-  public AuthenticationEntryPoint restAuthenticationEntryPoint() {
+  public AuthenticationEntryPoint restAuthenticationEntryPoint(
+      ObjectMapper objectMapper,
+      ApiProblemFactory problemFactory) {
     return (request, response, authException) -> {
-      response.setStatus(401);
-      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      response.getWriter().write("""
-          {"type":"https://clinic.com/problems/auth","title":"Unauthorized","status":401,
-           "detail":"Missing or invalid token","instance":"%s"}
-          """.formatted(request.getRequestURI()));
+      ProblemDetail pd = problemFactory.build(
+          HttpStatus.UNAUTHORIZED,
+          "https://clinic.com/problems/unauthorized",
+          "Unauthorized",
+          "Authentication required.",
+          request);
+      writeProblem(response, objectMapper, pd);
     };
   }
 
   @Bean
-  public AccessDeniedHandler restAccessDeniedHandler() {
+  public AccessDeniedHandler restAccessDeniedHandler(
+      ObjectMapper objectMapper,
+      ApiProblemFactory problemFactory) {
     return (request, response, accessDeniedException) -> {
-      response.setStatus(403);
-      response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      response.getWriter().write("""
-          {"type":"https://clinic.com/problems/authz","title":"Forbidden","status":403,
-           "detail":"You don't have permission to access this resource","instance":"%s"}
-          """.formatted(request.getRequestURI()));
+      ProblemDetail pd = problemFactory.build(
+          HttpStatus.FORBIDDEN,
+          "https://clinic.com/problems/forbidden",
+          "Forbidden",
+          "You don't have permission to access this resource.",
+          request);
+      writeProblem(response, objectMapper, pd);
     };
   }
 
@@ -59,14 +73,20 @@ public class SecurityConfig {
             .accessDeniedHandler(restAccessDeniedHandler))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-            // Invitations
             .requestMatchers("/api/public/invitations/verify").permitAll()
             .requestMatchers("/api/public/invitations/accept").authenticated()
-            // Admin
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
-            // resto
             .anyRequest().authenticated())
         .addFilterBefore(firebaseFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
+  }
+
+  private static void writeProblem(
+      HttpServletResponse response,
+      ObjectMapper objectMapper,
+      ProblemDetail pd) throws IOException {
+    response.setStatus(pd.getStatus());
+    response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+    objectMapper.writeValue(response.getWriter(), pd);
   }
 }
