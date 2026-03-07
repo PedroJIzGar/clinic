@@ -8,10 +8,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import com.clinic.app.shared.exception.ConflictException;
 import com.clinic.app.users.domain.AppUser;
@@ -20,7 +21,7 @@ import com.clinic.app.users.repo.AppUserRepository;
 
 import jakarta.annotation.Resource;
 
-@DataJpaTest(properties = {
+@org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest(properties = {
     "spring.flyway.enabled=false",
     "spring.jpa.hibernate.ddl-auto=create-drop"
 })
@@ -34,6 +35,8 @@ class UserProvisioningServiceTest {
   private UserProvisioningService provisioning;
 
   @TestConfiguration
+  @EnableJpaRepositories(basePackageClasses = AppUserRepository.class)
+  @EntityScan(basePackageClasses = AppUser.class)
   static class TestConfig {
     @Bean
     Clock clock() {
@@ -47,8 +50,8 @@ class UserProvisioningServiceTest {
   }
 
   @Test
-  void provisionOnLogin_createsNewPatient() {
-    AppUser u = provisioning.provisionOnLogin("uid-1", "Test@Email.com");
+  void registerPatientIfMissing_createsNewPatient() {
+    AppUser u = provisioning.registerPatientIfMissing("uid-1", "Test@Email.com");
 
     assertThat(u.getId()).isNotNull();
     assertThat(u.getFirebaseUid()).isEqualTo("uid-1");
@@ -64,20 +67,21 @@ class UserProvisioningServiceTest {
   }
 
   @Test
-  void provisionOnLogin_updatesEmailWhenUidExists() {
-    provisioning.provisionOnLogin("uid-1", "old@email.com");
+  void registerPatientIfMissing_updatesEmailWhenUidExists() {
+    provisioning.registerPatientIfMissing("uid-1", "old@email.com");
 
-    AppUser updated = provisioning.provisionOnLogin("uid-1", "NEW@Email.com");
+    AppUser updated = provisioning.registerPatientIfMissing("uid-1", "NEW@Email.com");
 
     assertThat(updated.getEmail()).isEqualTo("new@email.com");
+    // role must NOT be touched (stays whatever it is; here it was PATIENT)
     assertThat(updated.getRole()).isEqualTo(Role.PATIENT);
   }
 
   @Test
-  void provisionOnLogin_conflictWhenEmailBelongsToDifferentUid() {
-    provisioning.provisionOnLogin("uid-1", "same@email.com");
+  void registerPatientIfMissing_conflictWhenEmailBelongsToDifferentUid() {
+    provisioning.registerPatientIfMissing("uid-1", "same@email.com");
 
-    assertThatThrownBy(() -> provisioning.provisionOnLogin("uid-2", "same@email.com"))
+    assertThatThrownBy(() -> provisioning.registerPatientIfMissing("uid-2", "same@email.com"))
         .isInstanceOf(ConflictException.class);
   }
 
@@ -92,7 +96,7 @@ class UserProvisioningServiceTest {
 
   @Test
   void createOrUpdateStaffFromInvitation_updatesExistingUserRole() {
-    provisioning.provisionOnLogin("uid-1", "user@email.com"); // creates PATIENT
+    provisioning.registerPatientIfMissing("uid-1", "user@email.com"); // creates PATIENT
 
     AppUser staff = provisioning.createOrUpdateStaffFromInvitation("uid-1", "user@email.com", Role.RECEPTIONIST);
 
@@ -107,8 +111,35 @@ class UserProvisioningServiceTest {
   }
 
   @Test
-  void provisionOnLogin_rejectsMissingEmail() {
-    assertThatThrownBy(() -> provisioning.provisionOnLogin("uid-1", "  "))
+  void registerPatientIfMissing_rejectsMissingEmail() {
+    assertThatThrownBy(() -> provisioning.registerPatientIfMissing("uid-1", "  "))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void findExistingByUidOrEmail_returnsEmptyWhenMissingUid() {
+    assertThat(provisioning.findExistingByUidOrEmail("  ", "a@b.com")).isEmpty();
+  }
+
+  @Test
+  void findExistingByUidOrEmail_findsByUidFirst() {
+    provisioning.registerPatientIfMissing("uid-1", "user@email.com");
+
+    assertThat(provisioning.findExistingByUidOrEmail("uid-1", "other@email.com"))
+        .isPresent()
+        .get()
+        .extracting(AppUser::getEmail)
+        .isEqualTo("user@email.com");
+  }
+
+  @Test
+  void findExistingByUidOrEmail_findsByEmailIfUidNotFound() {
+    provisioning.registerPatientIfMissing("uid-1", "user@email.com");
+
+    assertThat(provisioning.findExistingByUidOrEmail("uid-NOTFOUND", "USER@email.com"))
+        .isPresent()
+        .get()
+        .extracting(AppUser::getFirebaseUid)
+        .isEqualTo("uid-1");
   }
 }

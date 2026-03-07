@@ -1,0 +1,11 @@
+To: staff.test@clinic.com
+Subject: [DEV] Clinic Staff Invitation
+
+You have been invited to join Clinic as staff.
+
+Invitation link:
+http://localhost:8080/invite/accept?token=ZGyNkB9-w5pjL9k5zCTirxpHn3tHKG3utPUh0fpLkAg
+
+Expires at: 2026-03-12T17:29:11.738651400Z
+
+(DEV NOTE) Copy the token from the link query param 'token' for Postman tests.

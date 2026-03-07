@@ -1,9 +1,11 @@
 package com.clinic.app.shared.security;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -44,7 +46,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
       HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
 
-    String authHeader = request.getHeader("Authorization");
+    String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
       filterChain.doFilter(request, response);
       return;
@@ -74,24 +76,35 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         return;
       }
 
-      // ✅ Provision/update local user
-      AppUser user = userProvisioningService.provisionOnLogin(uid, email);
+      // ✅ NO auto-create here. Only lookup if the AppUser already exists.
+      AppUser user = userProvisioningService.findExistingByUidOrEmail(uid, email).orElse(null);
 
-      // ✅ Add user context to logs (traceId already set by TraceIdFilter)
-      MDC.put("uid", user.getFirebaseUid());
-      MDC.put("email", user.getEmail());
-      MDC.put("role", user.getRole().name());
-      mdcPopulated = true;
+      FirebasePrincipal principal;
+      List<SimpleGrantedAuthority> authorities;
 
-      FirebasePrincipal principal = new FirebasePrincipal(
-          user.getFirebaseUid(),
-          user.getEmail(),
-          user.getRole());
+      if (user != null) {
+        principal = new FirebasePrincipal(user.getFirebaseUid(), user.getEmail(), user.getRole());
+        authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 
-      UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-          principal,
-          null,
-          List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
+        MDC.put("uid", user.getFirebaseUid());
+        MDC.put("email", user.getEmail());
+        MDC.put("role", user.getRole().name());
+        mdcPopulated = true;
+
+      } else {
+        // ✅ Authenticated, but not provisioned in DB yet (accept invitation / register
+        // patient will do it).
+        principal = new FirebasePrincipal(uid, email, null);
+        authorities = Collections.emptyList();
+
+        MDC.put("uid", uid);
+        MDC.put("email", email);
+        MDC.put("role", "UNPROVISIONED");
+        mdcPopulated = true;
+      }
+
+      UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(principal, null,
+          authorities);
 
       SecurityContextHolder.getContext().setAuthentication(authentication);
       filterChain.doFilter(request, response);

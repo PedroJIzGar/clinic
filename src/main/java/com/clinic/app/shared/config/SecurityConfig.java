@@ -24,9 +24,9 @@ public class SecurityConfig {
       response.setStatus(401);
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.getWriter().write("""
-        {"type":"https://clinic.com/problems/auth","title":"Unauthorized","status":401,
-         "detail":"Missing or invalid token","instance":"%s"}
-        """.formatted(request.getRequestURI()));
+          {"type":"https://clinic.com/problems/auth","title":"Unauthorized","status":401,
+           "detail":"Missing or invalid token","instance":"%s"}
+          """.formatted(request.getRequestURI()));
     };
   }
 
@@ -36,9 +36,9 @@ public class SecurityConfig {
       response.setStatus(403);
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.getWriter().write("""
-        {"type":"https://clinic.com/problems/authz","title":"Forbidden","status":403,
-         "detail":"You don't have permission to access this resource","instance":"%s"}
-        """.formatted(request.getRequestURI()));
+          {"type":"https://clinic.com/problems/authz","title":"Forbidden","status":403,
+           "detail":"You don't have permission to access this resource","instance":"%s"}
+          """.formatted(request.getRequestURI()));
     };
   }
 
@@ -47,8 +47,7 @@ public class SecurityConfig {
       HttpSecurity http,
       FirebaseAuthFilter firebaseFilter,
       AuthenticationEntryPoint restAuthenticationEntryPoint,
-      AccessDeniedHandler restAccessDeniedHandler
-  ) throws Exception {
+      AccessDeniedHandler restAccessDeniedHandler) throws Exception {
 
     return http
         .csrf(AbstractHttpConfigurer::disable)
@@ -57,14 +56,16 @@ public class SecurityConfig {
         .formLogin(AbstractHttpConfigurer::disable)
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint(restAuthenticationEntryPoint)
-            .accessDeniedHandler(restAccessDeniedHandler)
-        )
+            .accessDeniedHandler(restAccessDeniedHandler))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/actuator/health").permitAll()
-            .requestMatchers("/api/public/**").permitAll()
+            .requestMatchers("/actuator/**").permitAll()
+            // Invitations
+            .requestMatchers("/api/public/invitations/verify").permitAll()
+            .requestMatchers("/api/public/invitations/accept").authenticated()
+            // Admin
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
-            .anyRequest().authenticated()
-        )
+            // resto
+            .anyRequest().authenticated())
         .addFilterBefore(firebaseFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
   }

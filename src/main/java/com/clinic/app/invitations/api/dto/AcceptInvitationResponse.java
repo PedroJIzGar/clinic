@@ -1,17 +1,14 @@
 package com.clinic.app.invitations.api.dto;
 
+import java.time.OffsetDateTime;
+
 import com.clinic.app.invitations.domain.InvitationStatus;
 import com.clinic.app.users.domain.Role;
 
-import java.time.OffsetDateTime;
-
-public record ResendInvitationResult(
-    Long id,
+public record AcceptInvitationResponse(
+    Long invitationId,
     String email,
     Role role,
     InvitationStatus status,
-    OffsetDateTime expiresAt,
-    int sendCount,
-    OffsetDateTime lastSentAt,
-    String rawToken // solo para desarrollo
+    OffsetDateTime acceptedAt
 ) {}

@@ -2,7 +2,7 @@ package com.clinic.app.users.service;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +13,12 @@ import com.clinic.app.users.domain.Role;
 import com.clinic.app.users.repo.AppUserRepository;
 
 /**
- * Single entry-point for creating/updating local users based on Firebase authentication.
+ * User provisioning rules (enterprise-style):
+ * - Auth filter MUST NOT create users. It only authenticates and (optionally)
+ * loads roles if user exists.
+ * - Staff users are provisioned ONLY via invitations.accept().
+ * - Patient users are provisioned ONLY via an explicit registration endpoint
+ * (see registerPatientIfMissing()).
  */
 @Service
 public class UserProvisioningService {
@@ -27,23 +32,52 @@ public class UserProvisioningService {
   }
 
   /**
-   * Called when a Firebase-authenticated user hits the API.
-   * Policy:
-   * - If exists by uid: update email if changed, enable user.
-   * - If not exists by uid: ensure email not used, create PATIENT enabled=true.
+   * Auth filter helper: lookup only, never creates.
+   * - First by firebaseUid
+   * - Then by email
    */
-  @Transactional
-  public AppUser provisionOnLogin(String firebaseUid, String emailRaw) {
-    Objects.requireNonNull(firebaseUid, "firebaseUid");
-
-    String email = normalizeEmail(emailRaw);
-    if (email == null || email.isBlank()) {
-      throw new IllegalArgumentException("Missing email for provisioning");
+  @Transactional(readOnly = true)
+  public Optional<AppUser> findExistingByUidOrEmail(String firebaseUid, String emailRaw) {
+    if (firebaseUid == null || firebaseUid.isBlank()) {
+      return Optional.empty();
     }
 
+    Optional<AppUser> byUid = userRepo.findByFirebaseUid(firebaseUid);
+    if (byUid.isPresent()) {
+      return byUid;
+    }
+
+    if (emailRaw == null || emailRaw.isBlank()) {
+      return Optional.empty();
+    }
+
+    String email = normalizeEmail(emailRaw);
+    return userRepo.findByEmailIgnoreCase(email);
+  }
+
+  /**
+   * Patient provisioning: called ONLY from an explicit endpoint (not from auth
+   * filter).
+   * Policy:
+   * - If exists by uid: update email if changed, enable user. DO NOT change role.
+   * - If not exists by uid but exists by email: link uid, enable user. DO NOT
+   * change role.
+   * - If brand new: create PATIENT enabled=true.
+   */
+  @Transactional
+  public AppUser registerPatientIfMissing(String firebaseUid, String emailRaw) {
+
+    if (firebaseUid == null || firebaseUid.isBlank()) {
+      throw new IllegalArgumentException("firebaseUid is required");
+    }
+    if (emailRaw == null || emailRaw.isBlank()) {
+      throw new IllegalArgumentException("email is required");
+    }
+
+    String email = normalizeEmail(emailRaw);
     OffsetDateTime now = OffsetDateTime.now(clock);
 
-    // 1) Existing by uid
+    // 1) by uid
     var byUid = userRepo.findByFirebaseUid(firebaseUid);
     if (byUid.isPresent()) {
       AppUser u = byUid.get();
@@ -57,19 +91,28 @@ public class UserProvisioningService {
         u.setEmail(email);
       }
 
-      if (!u.isEnabled()) {
-        u.setEnabled(true);
-      }
-
+      // ✅ do NOT touch role here
+      u.setEnabled(true);
       return userRepo.save(u);
     }
 
-    // 2) No user by uid: ensure email not used
-    userRepo.findByEmailIgnoreCase(email).ifPresent(other -> {
-      throw new ConflictException("Email already registered with a different account");
-    });
+    // 2) by email (link account)
+    var byEmail = userRepo.findByEmailIgnoreCase(email);
+    if (byEmail.isPresent()) {
+      AppUser u = byEmail.get();
 
-    // 3) Create new PATIENT
+      if (u.getFirebaseUid() == null || u.getFirebaseUid().isBlank()) {
+        u.setFirebaseUid(firebaseUid);
+      } else if (!u.getFirebaseUid().equals(firebaseUid)) {
+        throw new ConflictException("Email already registered with a different account");
+      }
+
+      // ✅ do NOT touch role here
+      u.setEnabled(true);
+      return userRepo.save(u);
+    }
+
+    // 3) brand new user -> create patient
     AppUser created = AppUser.builder()
         .firebaseUid(firebaseUid)
         .email(email)
@@ -82,25 +125,29 @@ public class UserProvisioningService {
   }
 
   /**
-   * Used by invitations.accept():
-   * Ensure there is a local user with this uid/email and assign staff role.
+   * Staff provisioning: used by invitations.accept().
+   * Ensures there is a local user with this uid/email and assigns staff role.
    */
   @Transactional
   public AppUser createOrUpdateStaffFromInvitation(String firebaseUid, String emailRaw, Role staffRole) {
-    Objects.requireNonNull(firebaseUid, "firebaseUid");
-    Objects.requireNonNull(staffRole, "staffRole");
+
+    if (firebaseUid == null || firebaseUid.isBlank()) {
+      throw new IllegalArgumentException("firebaseUid is required for staff provisioning");
+    }
+    if (emailRaw == null || emailRaw.isBlank()) {
+      throw new IllegalArgumentException("Email is required for staff provisioning");
+    }
+    if (staffRole == null) {
+      throw new IllegalArgumentException("Staff role is required for staff provisioning");
+    }
+    if (staffRole == Role.PATIENT) {
+      throw new IllegalArgumentException("Staff role cannot be PATIENT");
+    }
 
     String email = normalizeEmail(emailRaw);
-    if (email == null || email.isBlank()) {
-      throw new IllegalArgumentException("Missing email for staff promotion");
-    }
-
-    if (staffRole == Role.PATIENT) {
-      throw new IllegalArgumentException("Staff invitation cannot assign PATIENT role");
-    }
-
     OffsetDateTime now = OffsetDateTime.now(clock);
 
+    // 1) by uid
     var byUid = userRepo.findByFirebaseUid(firebaseUid);
     if (byUid.isPresent()) {
       AppUser u = byUid.get();
@@ -119,11 +166,12 @@ public class UserProvisioningService {
       return userRepo.save(u);
     }
 
-    // No user by uid: ensure email not used
+    // 2) No user by uid: ensure email not used by another account
     userRepo.findByEmailIgnoreCase(email).ifPresent(other -> {
       throw new ConflictException("Email already registered with a different account");
     });
 
+    // 3) Create staff
     AppUser created = AppUser.builder()
         .firebaseUid(firebaseUid)
         .email(email)
@@ -136,6 +184,6 @@ public class UserProvisioningService {
   }
 
   private String normalizeEmail(String email) {
-    return email == null ? null : email.trim().toLowerCase();
+    return email == null ? "" : email.trim().toLowerCase();
   }
 }

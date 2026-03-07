@@ -1,8 +1,7 @@
 package com.clinic.app.invitations.api.dto;
 
-import com.clinic.app.invitations.domain.InvitationStatus;
-
 import java.time.OffsetDateTime;
+import com.clinic.app.invitations.domain.InvitationStatus;
 
 public record InvitationVerifyResponse(
     boolean valid,
