@@ -36,6 +36,6 @@ build/
 dev-mails/
 
 ## Local environment files / secrets
-.env
+.env.properties
 *.log
 firebase-*.json
